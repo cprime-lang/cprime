@@ -1,0 +1,92 @@
+{
+  "name": "C-Prime Dark",
+  "type": "dark",
+  "colors": {
+    "editor.background":             "#0d1117",
+    "editor.foreground":             "#e6edf3",
+    "editorLineNumber.foreground":   "#484f58",
+    "editorCursor.foreground":       "#58a6ff",
+    "editor.selectionBackground":    "#1f6feb55",
+    "editor.lineHighlightBackground":"#161b22",
+    "editorIndentGuide.background":  "#21262d",
+    "statusBar.background":          "#161b22",
+    "statusBar.foreground":          "#8b949e",
+    "activityBar.background":        "#0d1117",
+    "sideBar.background":            "#161b22",
+    "titleBar.activeBackground":     "#0d1117",
+    "tab.activeBackground":          "#0d1117",
+    "tab.inactiveBackground":        "#161b22",
+    "terminal.background":           "#0d1117",
+    "terminal.foreground":           "#e6edf3"
+  },
+  "tokenColors": [
+    {
+      "name": "THE BORROW OPERATOR — most important token in C-Prime",
+      "scope": "keyword.operator.borrow.cprime",
+      "settings": {
+        "foreground": "#ff7b72",
+        "fontStyle":  "bold"
+      }
+    },
+    {
+      "name": "Keywords",
+      "scope": "keyword.control.cprime, keyword.declaration.cprime",
+      "settings": { "foreground": "#ff7b72" }
+    },
+    {
+      "name": "Primitive Types",
+      "scope": "support.type.primitive.cprime",
+      "settings": { "foreground": "#79c0ff" }
+    },
+    {
+      "name": "Generic Types",
+      "scope": "support.type.generic.cprime",
+      "settings": { "foreground": "#79c0ff", "fontStyle": "italic" }
+    },
+    {
+      "name": "Constants — true, false, None, Some, Ok, Err",
+      "scope": "constant.language.cprime",
+      "settings": { "foreground": "#79c0ff", "fontStyle": "bold" }
+    },
+    {
+      "name": "Strings",
+      "scope": "string.quoted.double.cprime, string.quoted.single.cprime",
+      "settings": { "foreground": "#a5d6ff" }
+    },
+    {
+      "name": "Escape sequences",
+      "scope": "constant.character.escape.cprime",
+      "settings": { "foreground": "#79c0ff" }
+    },
+    {
+      "name": "Numbers",
+      "scope": "constant.numeric.cprime, constant.numeric.integer.cprime, constant.numeric.float.cprime, constant.numeric.hex.cprime",
+      "settings": { "foreground": "#79c0ff" }
+    },
+    {
+      "name": "Function names",
+      "scope": "entity.name.function.cprime",
+      "settings": { "foreground": "#d2a8ff" }
+    },
+    {
+      "name": "Operators",
+      "scope": "keyword.operator.comparison.cprime, keyword.operator.arithmetic.cprime, keyword.operator.assignment.cprime",
+      "settings": { "foreground": "#ff7b72" }
+    },
+    {
+      "name": "Arrow",
+      "scope": "keyword.operator.arrow.cprime",
+      "settings": { "foreground": "#ff7b72", "fontStyle": "bold" }
+    },
+    {
+      "name": "Comments",
+      "scope": "comment.line.double-slash.cprime, comment.block.cprime",
+      "settings": { "foreground": "#6e7681", "fontStyle": "italic" }
+    },
+    {
+      "name": "Documentation Comments",
+      "scope": "comment.block.documentation.cprime",
+      "settings": { "foreground": "#8b949e", "fontStyle": "italic" }
+    }
+  ]
+}

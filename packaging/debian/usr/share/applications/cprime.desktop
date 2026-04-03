@@ -1,0 +1,26 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=C-Prime Package Manager
+GenericName=C-Prime Tools
+Comment=Compile and run C-Prime programs, manage packages
+Exec=x-terminal-emulator -e bash -c "cppm; exec bash"
+Icon=cprime
+Terminal=true
+Categories=Development;IDE;Building;
+Keywords=cprime;compiler;programming;package;cpc;cpg;cppm;
+StartupNotify=false
+MimeType=text/x-cprime;
+Actions=NewProject;RunFile;GuardCheck;
+
+[Desktop Action NewProject]
+Name=New C-Prime Project
+Exec=x-terminal-emulator -e bash -c "printf 'Project name: '; read n; cppm init \"$n\" && cd \"$n\" && echo 'Created. Run: cppm run src/main.cp'; exec bash"
+
+[Desktop Action RunFile]
+Name=Run C-Prime File
+Exec=x-terminal-emulator -e bash -c "printf 'File to run: '; read f; cpc \"$f\" -o /tmp/cprime_run && /tmp/cprime_run; echo; printf 'Press Enter to close...'; read; exec bash"
+
+[Desktop Action GuardCheck]
+Name=Guard Check (cpg)
+Exec=x-terminal-emulator -e bash -c "printf 'File to check: '; read f; cpg \"$f\"; printf 'Press Enter to close...'; read; exec bash"

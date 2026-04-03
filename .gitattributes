@@ -1,0 +1,7 @@
+# Treat .cp files as C-Prime and not C++
+*.cp linguist-language=C-Prime
+
+# Mark bootstrap or helper C/C++ files as "vendored" 
+# to hide them from the language statistics bar
+src/bootstrap/* linguist-vendored
+lib/external/* linguist-vendored

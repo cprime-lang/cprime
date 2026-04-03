@@ -1,0 +1,80 @@
+{
+  "name": "cprime-lang",
+  "displayName": "C-Prime Language",
+  "description": "C-Prime — syntax highlighting, IntelliSense, Guard diagnostics, tutorials, and release notes",
+  "version": "0.1.0",
+  "publisher": "cprime-lang",
+  "icon": "media/logo.png",
+  "galleryBanner": { "color": "#0d1117", "theme": "dark" },
+  "repository": { "type": "git", "url": "https://github.com/cprime-lang/cprime" },
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages", "Snippets", "Debuggers", "Other"],
+  "keywords": ["cprime", "c-prime", "systems programming", "memory safe", "borrow checker"],
+  "activationEvents": ["onLanguage:cprime"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "cprime",
+      "aliases": ["C-Prime", "cprime", "c`"],
+      "extensions": [".cp"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "cprime",
+      "scopeName": "source.cprime",
+      "path": "./syntaxes/cprime.tmLanguage.json"
+    }],
+    "themes": [{
+      "label": "C-Prime Dark",
+      "uiTheme": "vs-dark",
+      "path": "./themes/cprime-dark-color-theme.json"
+    }],
+    "snippets": [{ "language": "cprime", "path": "./snippets/cprime.json" }],
+    "commands": [
+      { "command": "cprime.runFile",         "title": "C-Prime: Run File",              "icon": "$(play)"   },
+      { "command": "cprime.checkFile",       "title": "C-Prime: Guard Check (cpg)",     "icon": "$(shield)" },
+      { "command": "cprime.buildProject",    "title": "C-Prime: Build Project",         "icon": "$(gear)"   },
+      { "command": "cprime.openTutorial",    "title": "C-Prime: Open Tutorial",         "icon": "$(book)"   },
+      { "command": "cprime.openReleases",    "title": "C-Prime: View Releases",         "icon": "$(tag)"    },
+      { "command": "cprime.checkForUpdates", "title": "C-Prime: Check for Updates",     "icon": "$(sync)"   },
+      { "command": "cprime.newFile",         "title": "C-Prime: New .cp File",          "icon": "$(add)"    }
+    ],
+    "menus": {
+      "editor/title": [
+        { "command": "cprime.runFile",   "when": "resourceExtname == .cp", "group": "navigation" },
+        { "command": "cprime.checkFile", "when": "resourceExtname == .cp", "group": "navigation" }
+      ],
+      "editor/context": [
+        { "command": "cprime.runFile",      "when": "resourceExtname == .cp", "group": "cprime" },
+        { "command": "cprime.checkFile",    "when": "resourceExtname == .cp", "group": "cprime" },
+        { "command": "cprime.openTutorial", "when": "resourceExtname == .cp", "group": "cprime" }
+      ]
+    },
+    "configuration": {
+      "title": "C-Prime",
+      "properties": {
+        "cprime.compiler.path":            { "type": "string",  "default": "cpc",   "description": "Path to cpc compiler" },
+        "cprime.guard.path":               { "type": "string",  "default": "cpg",   "description": "Path to cpg guard" },
+        "cprime.pkgman.path":              { "type": "string",  "default": "cppm",  "description": "Path to cppm package manager" },
+        "cprime.compiler.optimizeOnBuild": { "type": "boolean", "default": false,   "description": "Pass -O to cpc on build" },
+        "cprime.guard.runOnSave":          { "type": "boolean", "default": true,    "description": "Run cpg automatically on save" },
+        "cprime.guard.strictMode":         { "type": "boolean", "default": false,   "description": "Treat cpg warnings as errors" }
+      }
+    },
+    "keybindings": [
+      { "command": "cprime.runFile",   "key": "ctrl+f5",       "when": "resourceExtname == .cp" },
+      { "command": "cprime.checkFile", "key": "ctrl+shift+g",  "when": "resourceExtname == .cp" }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch":   "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package --no-dependencies --out cprime-lang-0.1.0.vsix"
+  },
+  "devDependencies": {
+    "@types/node":    "^20.0.0",
+    "@types/vscode":  "^1.85.0",
+    "typescript":     "^5.0.0",
+    "@vscode/vsce":   "^2.22.0"
+  }
+}

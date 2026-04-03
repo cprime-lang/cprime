@@ -1,0 +1,81 @@
+#!/bin/bash
+set -e
+
+echo ""
+echo "  ╔══════════════════════════════════════════════╗"
+echo "  ║   C-Prime v0.1.0-alpha installed!            ║"
+echo "  ║   Safe as Rust, Simple as C, Sharp as \`      ║"
+echo "  ╚══════════════════════════════════════════════╝"
+echo ""
+
+# Make all binaries executable
+chmod +x /usr/bin/cpc /usr/bin/cpg /usr/bin/cppm /usr/bin/cpc-bootstrap 2>/dev/null || true
+
+# Create user config dirs
+mkdir -p ~/.cppm/cache ~/.cppm/packages ~/.cppm/registry 2>/dev/null || true
+
+# Set CPRIME_BOOTSTRAP so cpc knows where the bootstrap lives
+if ! grep -q "CPRIME_BOOTSTRAP" /etc/environment 2>/dev/null; then
+    echo 'CPRIME_BOOTSTRAP=/usr/bin/cpc-bootstrap' >> /etc/environment
+fi
+if ! grep -q "CPRIME_BOOTSTRAP" /etc/profile.d/cprime.sh 2>/dev/null; then
+    mkdir -p /etc/profile.d
+    cat > /etc/profile.d/cprime.sh << 'PROFILE'
+# C-Prime environment
+export CPRIME_BOOTSTRAP=/usr/bin/cpc-bootstrap
+export CPRIME_STDLIB=/usr/lib/cprime/stdlib
+PROFILE
+    chmod 644 /etc/profile.d/cprime.sh
+fi
+
+# Register MIME type for .cp files
+mkdir -p /usr/share/mime/packages
+cat > /usr/share/mime/packages/cprime.xml << 'MIME'
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="text/x-cprime">
+    <comment>C-Prime source code</comment>
+    <glob pattern="*.cp"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+</mime-info>
+MIME
+update-mime-database /usr/share/mime 2>/dev/null || true
+
+# Register icons with the hicolor theme
+gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+update-icon-caches /usr/share/icons/hicolor 2>/dev/null || true
+
+# Register desktop entry (application menu)
+update-desktop-database /usr/share/applications 2>/dev/null || true
+
+# Bash completion for cpc and cppm
+cat > /etc/bash_completion.d/cprime << 'BASH'
+_cpc_complete() {
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    case "$prev" in
+        -o) COMPREPLY=($(compgen -f -- "$cur")); return ;;
+    esac
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=($(compgen -W "-o -O -v --version --help --dump-tokens --dump-ast --dump-asm --check --verbose" -- "$cur"))
+    else
+        COMPREPLY=($(compgen -f -X "!*.cp" -- "$cur"))
+    fi
+}
+complete -F _cpc_complete cpc
+
+_cppm_complete() {
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local cmds="init run build check install uninstall search list update version"
+    COMPREPLY=($(compgen -W "$cmds" -- "$cur"))
+}
+complete -F _cppm_complete cppm
+BASH
+
+echo "  Quick start:"
+echo "    cpc --version              # verify install"
+echo "    cppm init hello && cd hello"
+echo "    cppm run src/main.cp       # compile + run"
+echo "    cpg src/main.cp            # static analysis"
+echo ""

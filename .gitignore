@@ -1,0 +1,24 @@
+# Build outputs
+build/
+dist/
+*.o
+*.a
+*.deb
+
+# Temp files
+/tmp/
+*.s
+*.c.tmp
+
+# VS Code extension build output
+vscode-extension/out/
+vscode-extension/node_modules/
+vscode-extension/*.vsix
+
+# OS
+.DS_Store
+Thumbs.db
+
+#Some other docs
+docs/WHAT_TO_DO.md
+docs/REDDIT_POST_DRAFT.md

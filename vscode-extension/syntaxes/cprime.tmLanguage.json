@@ -1,0 +1,181 @@
+{
+  "name": "C-Prime",
+  "scopeName": "source.cprime",
+  "fileTypes": ["cp"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#borrow_operator" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#functions" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.cprime",
+          "match": "///.*$",
+          "captures": {
+            "0": { "name": "comment.block.documentation.cprime" }
+          }
+        },
+        {
+          "name": "comment.line.double-slash.cprime",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.cprime",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "borrow_operator": {
+      "patterns": [
+        {
+          "comment": "THE BORROW OPERATOR — highlighted specially",
+          "name": "keyword.operator.borrow.cprime",
+          "match": "`(mut\\s+)?"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.cprime",
+          "match": "\\b(if|else|while|for|in|return|match|break|continue)\\b"
+        },
+        {
+          "name": "keyword.declaration.cprime",
+          "match": "\\b(fn|struct|enum|import|const|auto|mut|unsafe|asm|type|impl)\\b"
+        },
+        {
+          "name": "constant.language.cprime",
+          "match": "\\b(true|false|None|Some|Ok|Err|void)\\b"
+        },
+        {
+          "name": "keyword.operator.cprime",
+          "match": "\\b(sizeof|typeof|as)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "support.type.primitive.cprime",
+          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|char|str|byte|usize|isize|void)\\b"
+        },
+        {
+          "name": "support.type.generic.cprime",
+          "match": "\\b(Option|Result|Vec|HashMap|HashSet|Box|Slice)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.cprime",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.cprime",
+              "match": "\\\\(n|t|r|0|\\\\|'|\"|x[0-9A-Fa-f]{2})"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.cprime",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.cprime",
+              "match": "\\\\(n|t|r|0|\\\\|'|\"|x[0-9A-Fa-f]{2})"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.cprime",
+          "match": "\\b0x[0-9A-Fa-f_]+\\b"
+        },
+        {
+          "name": "constant.numeric.binary.cprime",
+          "match": "\\b0b[01_]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.cprime",
+          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*(f32|f64)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.cprime",
+          "match": "\\b[0-9][0-9_]*(i8|i16|i32|i64|u8|u16|u32|u64|usize|isize)?\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.cprime",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\\s*\\()"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.comparison.cprime",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.logical.cprime",
+          "match": "(&&|\\|\\||!)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.cprime",
+          "match": "(\\+|-|\\*|/|%|\\+\\+|--)"
+        },
+        {
+          "name": "keyword.operator.assignment.cprime",
+          "match": "(=|\\+=|-=|\\*=|/=)"
+        },
+        {
+          "name": "keyword.operator.arrow.cprime",
+          "match": "->"
+        },
+        {
+          "name": "keyword.operator.range.cprime",
+          "match": "\\.\\."
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.terminator.statement.cprime",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.separator.comma.cprime",
+          "match": ","
+        },
+        {
+          "name": "punctuation.section.block.begin.cprime",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.section.block.end.cprime",
+          "match": "\\}"
+        }
+      ]
+    }
+  }
+}

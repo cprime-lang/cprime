@@ -1,0 +1,450 @@
+# =============================================================================
+# C-Prime — GitHub Actions CI/CD Pipeline
+# .github/workflows/ci.yml
+# =============================================================================
+#
+# Branch model (mirrors Rust / Go / GCC conventions):
+#
+#   main            — stable, tagged releases only. Protected.
+#   dev             — primary development integration branch
+#   release/v*      — release preparation (freeze, bump version, changelog)
+#   feature/*       — new language features, stdlib, tooling
+#   fix/*           — bug fixes (merge to dev; hotfix/* for critical production fixes)
+#   hotfix/*        — emergency fixes off main, merged back to main + dev
+#   docs/*          — documentation-only changes
+#   experiment/*    — exploratory branches, never merged directly to main
+#
+# Tagging convention:
+#   v0.1.0-alpha    — first public alpha (THIS RELEASE)
+#   v0.1.0-beta     — feature-frozen beta
+#   v0.1.0          — stable general release
+#   v0.1.1          — patch / hotfix release
+#   v0.2.0          — minor release (ARM64, generics, net stdlib...)
+#
+# Workflow triggers:
+#   push to dev / feature/* / fix/*  → build + test only
+#   push to main                     → build + test + package (no GitHub Release)
+#   push tag v*                      → full pipeline + GitHub Release + branch setup
+# =============================================================================
+
+name: C-Prime CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - 'release/**'
+      - 'feature/**'
+      - 'fix/**'
+      - 'hotfix/**'
+      - 'docs/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - dev
+
+env:
+  CPRIME_VERSION:     "0.1.0-alpha"
+  CPRIME_TAG:         "v0.1.0-alpha"
+  CPRIME_CODENAME:    "Backtick"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 1 — Build bootstrap + verify self-hosting
+# Runs on every push and PR to every branch
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+
+  build-and-selfhost:
+    name: "Build & Self-Hosting Verification"
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout (full history for tagging)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential gcc make binutils \
+            libssl-dev libcurl4-openssl-dev \
+            fakeroot dpkg-dev
+
+      - name: "Phase 2 — Build bootstrap C compiler"
+        working-directory: bootstrap
+        run: |
+          make
+          echo "Bootstrap binary: $(ls -lh ../build/bootstrap/cpc-bootstrap)"
+
+      - name: "Phase 2 — Compile cpc from main.cp using bootstrap"
+        run: |
+          mkdir -p build/compiler
+          CPRIME_BOOTSTRAP=./build/bootstrap/cpc-bootstrap \
+            ./build/bootstrap/cpc-bootstrap compiler/src/main.cp \
+            -o build/compiler/cpc
+          chmod +x build/compiler/cpc
+          echo "✅  cpc compiled by bootstrap"
+
+      - name: "Verify cpc basic commands"
+        run: |
+          echo "=== cpc --version ==="
+          ./build/compiler/cpc --version
+          echo ""
+          echo "=== cpc --help ==="
+          ./build/compiler/cpc --help
+
+      - name: "Verify cpc compiles hello_world.cp"
+        run: |
+          CPRIME_BOOTSTRAP=./build/bootstrap/cpc-bootstrap \
+            ./build/compiler/cpc docs/examples/hello_world.cp -o /tmp/hello
+          echo "Compiled. Running:"
+          /tmp/hello
+          echo "✅  hello_world.cp compiled and executed"
+
+      - name: "Verify cpc compiles borrow_demo.cp"
+        run: |
+          CPRIME_BOOTSTRAP=./build/bootstrap/cpc-bootstrap \
+            ./build/compiler/cpc docs/examples/borrow_demo.cp -o /tmp/borrow
+          echo "✅  borrow_demo.cp compiled"
+
+      - name: "SELF-HOSTING — cpc compiles itself"
+        run: |
+          echo "Step 1: cpc compiles compiler/src/main.cp → cpc2"
+          CPRIME_BOOTSTRAP=./build/bootstrap/cpc-bootstrap \
+            ./build/compiler/cpc compiler/src/main.cp \
+            -o build/compiler/cpc2
+          chmod +x build/compiler/cpc2
+
+          echo ""
+          echo "Step 2: cpc2 --version"
+          ./build/compiler/cpc2 --version
+
+          echo ""
+          echo "Step 3: cpc2 compiles hello_world.cp"
+          CPRIME_BOOTSTRAP=./build/bootstrap/cpc-bootstrap \
+            ./build/compiler/cpc2 docs/examples/hello_world.cp \
+            -o /tmp/hello2
+          /tmp/hello2
+
+          echo ""
+          echo "✅  SELF-HOSTING VERIFIED — cpc compiled itself"
+
+      - name: Upload cpc binary (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpc-linux-amd64
+          path: build/compiler/cpc
+          if-no-files-found: error
+
+      - name: Upload cpc-bootstrap binary (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpc-bootstrap-linux-amd64
+          path: build/bootstrap/cpc-bootstrap
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 2 — Build VS Code extension
+# ─────────────────────────────────────────────────────────────────────────────
+  vscode-extension:
+    name: "Build VS Code Extension"
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: vscode-extension/package.json
+
+      - name: Install npm dependencies
+        working-directory: vscode-extension
+        run: npm install
+
+      - name: Compile TypeScript
+        working-directory: vscode-extension
+        run: npm run compile
+
+      - name: Package extension as .vsix
+        working-directory: vscode-extension
+        run: |
+          npm install -g @vscode/vsce
+          vsce package --out cprime-lang-${{ env.CPRIME_VERSION }}.vsix
+          echo "Built: $(ls -lh cprime-lang-*.vsix)"
+
+      - name: Upload extension (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: vscode-extension/cprime-lang-*.vsix
+          if-no-files-found: error
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 3 — Build Debian package
+# Only on: main branch push + any version tag
+# ─────────────────────────────────────────────────────────────────────────────
+  package-deb:
+    name: "Build Debian Package"
+    runs-on: ubuntu-22.04
+    needs: [build-and-selfhost, vscode-extension]
+    if: >
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fakeroot dpkg-dev
+
+      - name: Download cpc binary
+        uses: actions/download-artifact@v4
+        with:
+          name: cpc-linux-amd64
+          path: build/compiler/
+
+      - name: Download cpc-bootstrap binary
+        uses: actions/download-artifact@v4
+        with:
+          name: cpc-bootstrap-linux-amd64
+          path: build/bootstrap/
+
+      - name: Assemble package tree
+        run: |
+          mkdir -p dist
+          chmod +x build/compiler/cpc
+          chmod +x build/bootstrap/cpc-bootstrap
+
+          # Main compiler
+          cp build/compiler/cpc              packaging/debian/usr/bin/cpc
+          cp build/bootstrap/cpc-bootstrap   packaging/debian/usr/bin/cpc-bootstrap
+
+          # cpg stub (full static analyser ships in v0.2.0)
+          cat > packaging/debian/usr/bin/cpg << 'SH'
+          #!/bin/bash
+          echo "cpg v0.1.0-alpha (C-Prime Guard)"
+          echo "Full static analysis ships in v0.2.0."
+          echo "Usage: cpg <file.cp>"
+          SH
+          chmod +x packaging/debian/usr/bin/cpg
+
+          # cppm stub (package manager ships in v0.2.0)
+          cat > packaging/debian/usr/bin/cppm << 'SH'
+          #!/bin/bash
+          case "$1" in
+            version|--version) echo "cppm v0.1.0-alpha (C-Prime Package Manager)" ;;
+            run)
+              if [ -z "$2" ]; then echo "Usage: cppm run <file.cp>"; exit 1; fi
+              CPRIME_BOOTSTRAP="${CPRIME_BOOTSTRAP:-/usr/bin/cpc-bootstrap}"
+              cpc "$2" -o /tmp/cppm_run_$$ && /tmp/cppm_run_$$
+              rm -f /tmp/cppm_run_$$
+              ;;
+            *)
+              echo "cppm v0.1.0-alpha — minimal launcher"
+              echo "Commands: version, run <file.cp>"
+              echo "Full package management ships in v0.2.0"
+              ;;
+          esac
+          SH
+          chmod +x packaging/debian/usr/bin/cppm
+
+          # stdlib
+          cp -r stdlib/. packaging/debian/usr/lib/cprime/stdlib/ 2>/dev/null || true
+
+          # docs
+          cp README.md              packaging/debian/usr/share/doc/cprime/
+          cp docs/RELEASE_NOTES.md  packaging/debian/usr/share/doc/cprime/ 2>/dev/null || true
+          cp LICENSE                packaging/debian/usr/share/doc/cprime/
+
+          # Desktop entry
+          cp packaging/assets/cprime.desktop \
+             packaging/debian/usr/share/applications/ 2>/dev/null || true
+
+          # Ensure scripts are executable
+          chmod 755 packaging/debian/DEBIAN/postinst
+          [ -f packaging/debian/DEBIAN/postrm ] && chmod 755 packaging/debian/DEBIAN/postrm
+
+      - name: Build .deb
+        run: |
+          fakeroot dpkg-deb --build packaging/debian \
+            dist/cprime_${{ env.CPRIME_VERSION }}_amd64.deb
+          echo "Built: $(ls -lh dist/cprime_*.deb)"
+
+      - name: Validate .deb
+        run: |
+          dpkg-deb --info     dist/cprime_${{ env.CPRIME_VERSION }}_amd64.deb
+          dpkg-deb --contents dist/cprime_${{ env.CPRIME_VERSION }}_amd64.deb | head -25
+
+      - name: Upload .deb (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cprime-deb
+          path: dist/cprime_*.deb
+          if-no-files-found: error
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 4 — Initialize repository branches
+# Runs ONCE when the v0.1.0-alpha tag is pushed.
+# Creates: dev, release/v0.1.0-alpha, and protects main.
+# ─────────────────────────────────────────────────────────────────────────────
+  setup-branches:
+    name: "Initialize Repository Branches"
+    runs-on: ubuntu-22.04
+    needs: [build-and-selfhost]
+    if: github.ref == 'refs/tags/v0.1.0-alpha'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create dev branch (mirrors main at release point)
+        run: |
+          # dev is the primary development branch going forward
+          if git ls-remote --heads origin dev | grep -q dev; then
+            echo "dev branch already exists — skipping"
+          else
+            git checkout -b dev
+            git push origin dev
+            echo "✅  Created branch: dev"
+          fi
+
+      - name: Create release/v0.1.0-alpha branch
+        run: |
+          BRANCH="release/v${{ env.CPRIME_VERSION }}"
+          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            echo "$BRANCH already exists — skipping"
+          else
+            git checkout -b "$BRANCH"
+            git push origin "$BRANCH"
+            echo "✅  Created branch: $BRANCH"
+          fi
+          git checkout main
+
+      - name: Print branch summary
+        run: |
+          echo "=============================================="
+          echo " C-Prime ${{ env.CPRIME_TAG }} — Branch Setup"
+          echo "=============================================="
+          echo ""
+          echo " Branches created:"
+          echo "   main                    ← stable (this release)"
+          echo "   dev                     ← integration/development"
+          echo "   release/v0.1.0-alpha    ← release snapshot"
+          echo ""
+          echo " Branches for future work:"
+          echo "   feature/arm64           ← ARM64 backend (v0.2.0)"
+          echo "   feature/generics        ← Full generic types"
+          echo "   feature/net-stdlib      ← net.cp stdlib module"
+          echo "   feature/cpg-full        ← Full cpg static analyser"
+          echo "   feature/cppm-registry   ← cppm package registry"
+          echo ""
+          echo " Development workflow:"
+          echo "   git checkout dev"
+          echo "   git checkout -b feature/my-feature"
+          echo "   # work..."
+          echo "   git push origin feature/my-feature"
+          echo "   # open PR → dev"
+          echo "   # dev merges to main via release/v* branch"
+          echo "=============================================="
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 5 — GitHub Release
+# Only on version tags (v0.1.0-alpha, v0.1.0, v0.2.0, etc.)
+# ─────────────────────────────────────────────────────────────────────────────
+  release:
+    name: "GitHub Release ${{ github.ref_name }}"
+    runs-on: ubuntu-22.04
+    needs: [package-deb, setup-branches]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download .deb package
+        uses: actions/download-artifact@v4
+        with:
+          name: cprime-deb
+          path: ./artifacts/deb/
+
+      - name: Download VS Code extension
+        uses: actions/download-artifact@v4
+        with:
+          name: vscode-extension
+          path: ./artifacts/ext/
+
+      - name: Download cpc binary
+        uses: actions/download-artifact@v4
+        with:
+          name: cpc-linux-amd64
+          path: ./artifacts/bin/
+
+      - name: Prepare assets
+        run: |
+          chmod +x artifacts/bin/cpc
+          echo "Release assets:"
+          ls -lhR artifacts/
+
+      - name: Determine pre-release flag
+        id: prerelease
+        run: |
+          TAG="${{ github.ref_name }}"
+          if echo "$TAG" | grep -qE 'alpha|beta|rc'; then
+            echo "is_prerelease=true"  >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:   ${{ github.ref_name }}
+          name:       "C-Prime ${{ github.ref_name }} — Backtick"
+          body_path:  docs/RELEASE_NOTES.md
+          draft:      false
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
+          files: |
+            artifacts/deb/cprime_*.deb
+            artifacts/ext/cprime-lang-*.vsix
+            artifacts/bin/cpc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        run: |
+          echo "================================================"
+          echo " C-Prime ${{ github.ref_name }} released! 🎉"
+          echo "================================================"
+          echo " .deb:   cprime_${{ env.CPRIME_VERSION }}_amd64.deb"
+          echo " .vsix: cprime-lang-${{ env.CPRIME_VERSION }}.vsix"
+          echo " binary: cpc (Linux x86_64, self-hosted)"
+          echo ""
+          echo " Install:"
+          echo "   sudo dpkg -i cprime_${{ env.CPRIME_VERSION }}_amd64.deb"
+          echo "   cpc --version"
+          echo ""
+          echo " GitHub:"
+          echo "   https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+          echo "================================================"

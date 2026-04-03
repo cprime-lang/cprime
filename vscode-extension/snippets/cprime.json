@@ -1,0 +1,191 @@
+{
+  "Function definition": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:name}(${2:params}) -> ${3:void} {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "Define a C-Prime function"
+  },
+  "Main function": {
+    "prefix": "main",
+    "body": [
+      "fn main() -> i32 {",
+      "\t${0}",
+      "\treturn 0;",
+      "}"
+    ],
+    "description": "C-Prime main entry point"
+  },
+  "Struct definition": {
+    "prefix": "struct",
+    "body": [
+      "struct ${1:Name} {",
+      "\t${2:type} ${3:field};",
+      "}"
+    ],
+    "description": "Define a C-Prime struct"
+  },
+  "If statement": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition} {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "If statement"
+  },
+  "If-else statement": {
+    "prefix": "ife",
+    "body": [
+      "if ${1:condition} {",
+      "\t${2}",
+      "} else {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "If-else statement"
+  },
+  "While loop": {
+    "prefix": "while",
+    "body": [
+      "while ${1:condition} {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "While loop"
+  },
+  "For range loop": {
+    "prefix": "for",
+    "body": [
+      "for ${1:i} in ${2:0}..${3:10} {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "For range loop"
+  },
+  "Match expression": {
+    "prefix": "match",
+    "body": [
+      "match ${1:value} {",
+      "\t${2:pattern} -> ${3:expr},",
+      "\t_           -> ${0},",
+      "}"
+    ],
+    "description": "Match expression"
+  },
+  "Match Result": {
+    "prefix": "matchr",
+    "body": [
+      "match ${1:result} {",
+      "\tOk(${2:v})  -> ${3:v},",
+      "\tErr(${4:e}) -> { ${0} },",
+      "}"
+    ],
+    "description": "Match on Result<T,E>"
+  },
+  "Match Option": {
+    "prefix": "matcho",
+    "body": [
+      "match ${1:opt} {",
+      "\tSome(${2:v}) -> ${3:v},",
+      "\tNone         -> ${0},",
+      "}"
+    ],
+    "description": "Match on Option<T>"
+  },
+  "Borrow variable": {
+    "prefix": "borrow",
+    "body": "`${1:variable}",
+    "description": "Borrow a variable with the backtick operator"
+  },
+  "Mutable borrow": {
+    "prefix": "borrowmut",
+    "body": "`mut ${1:variable}",
+    "description": "Mutable borrow with the backtick operator"
+  },
+  "Borrow parameter type": {
+    "prefix": "refparam",
+    "body": "${1:name} `${2:Type}",
+    "description": "Function parameter as a borrow (reference)"
+  },
+  "Import module": {
+    "prefix": "import",
+    "body": "import ${1:module};",
+    "description": "Import a stdlib module"
+  },
+  "Vec declaration": {
+    "prefix": "vec",
+    "body": [
+      "Vec<${1:i32}> ${2:v} = Vec.new();",
+      "${2:v}.push(${0});"
+    ],
+    "description": "Create a Vec<T>"
+  },
+  "Option variable": {
+    "prefix": "opt",
+    "body": "Option<${1:i32}> ${2:val} = ${3:Some(0)};",
+    "description": "Option<T> variable"
+  },
+  "Result variable": {
+    "prefix": "res",
+    "body": "Result<${1:i32}, ${2:str}> ${3:result} = ${4:Ok(0)};",
+    "description": "Result<T,E> variable"
+  },
+  "Return Ok": {
+    "prefix": "rok",
+    "body": "return Ok(${0});",
+    "description": "Return Ok(value)"
+  },
+  "Return Err": {
+    "prefix": "rerr",
+    "body": "return Err(${1:\"error message\"});",
+    "description": "Return Err(message)"
+  },
+  "Println": {
+    "prefix": "println",
+    "body": "io.println(${1:\"message\"});",
+    "description": "Print line to stdout"
+  },
+  "Printf": {
+    "prefix": "printf",
+    "body": "io.printf(\"${1:%s}\\n\", ${0});",
+    "description": "Printf to stdout"
+  },
+  "Const definition": {
+    "prefix": "const",
+    "body": "const ${1:str} ${2:NAME} = ${3:\"value\"};",
+    "description": "Constant definition"
+  },
+  "Doc comment": {
+    "prefix": "///",
+    "body": [
+      "/// ${1:Description}",
+      "/// @param ${2:name} - ${3:description}",
+      "/// @return ${0:description}"
+    ],
+    "description": "Documentation comment"
+  },
+  "Unsafe block": {
+    "prefix": "unsafe",
+    "body": [
+      "unsafe {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "Unsafe block for raw pointer operations"
+  },
+  "Hello World": {
+    "prefix": "hello",
+    "body": [
+      "import io;",
+      "",
+      "fn main() -> i32 {",
+      "\tio.println(\"Hello, World!\");",
+      "\treturn 0;",
+      "}"
+    ],
+    "description": "C-Prime Hello World program"
+  }
+}

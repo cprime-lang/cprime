@@ -1,0 +1,16 @@
+#!/bin/bash
+# postrm — cleanup on uninstall
+
+case "$1" in
+    purge|remove)
+        # Remove MIME type
+        if command -v update-mime-database &>/dev/null; then
+            update-mime-database /usr/share/mime 2>/dev/null || true
+        fi
+        # Remove desktop db entry
+        if command -v update-desktop-database &>/dev/null; then
+            update-desktop-database /usr/share/applications 2>/dev/null || true
+        fi
+        ;;
+esac
+exit 0

@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# cppm — C-Prime Package Manager v0.1.0-alpha
+VERSION="v0.1.0-alpha"
+CYAN='\033[0;36m'; GREEN='\033[0;32m'; RED='\033[0;31m'
+YELLOW='\033[1;33m'; BOLD='\033[1m'; RESET='\033[0m'
+
+# Find cpc — check installed path, then CPRIME_BOOTSTRAP fallback
+find_cpc() {
+    command -v cpc &>/dev/null && echo "cpc" && return
+    [ -f "/usr/bin/cpc" ] && echo "/usr/bin/cpc" && return
+    echo "cpc"
+}
+
+usage() {
+    echo -e "${BOLD}cppm${RESET} $VERSION — C-Prime Package Manager"
+    echo ""
+    echo "Usage: cppm <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  init <name>        Create a new C-Prime project"
+    echo "  run  <file.cp>     Compile and run a .cp file"
+    echo "  build              Build the current project"
+    echo "  check              Borrow-check without compiling"
+    echo "  version            Show version"
+    echo "  --help             Show help"
+    echo ""
+    echo "Examples:"
+    echo "  cppm init hello"
+    echo "  cppm run src/main.cp"
+    echo "  cppm build"
+}
+
+cmd_init() {
+    local name="${1:-myproject}"
+    if [ -d "$name" ]; then
+        echo -e "${RED}[cppm] error: directory '$name' already exists${RESET}" >&2; exit 1
+    fi
+    mkdir -p "$name/src" "$name/tests" "$name/docs"
+    cat > "$name/cprime.json" << JSON
+{
+  "name": "$name",
+  "version": "0.1.0",
+  "description": "A C-Prime project",
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "dev_dependencies": {}
+}
+JSON
+    cat > "$name/src/main.cp" << 'CP'
+import io;
+
+fn main() -> i32 {
+    io.println("Hello from C-Prime!");
+    return 0;
+}
+CP
+    cat > "$name/.gitignore" << 'GIT'
+build/
+dist/
+*.o
+a.out
+GIT
+    cat > "$name/README.md" << MD
+# $name
+
+A C-Prime project.
+
+## Build and run
+
+\`\`\`bash
+cppm run src/main.cp
+\`\`\`
+MD
+    echo -e "${GREEN}[cppm]${RESET} Created project: ${BOLD}$name/${RESET}"
+    echo "  src/main.cp     — entry point"
+    echo "  cprime.json     — project manifest"
+    echo ""
+    echo "  Next steps:"
+    echo "    cd $name"
+    echo "    cppm run src/main.cp"
+}
+
+cmd_run() {
+    local file="${1:-src/main.cp}"
+    [ -f "$file" ] || { echo -e "${RED}[cppm] error: file not found: $file${RESET}" >&2; exit 1; }
+    local CPC
+    CPC="$(find_cpc)"
+    local out="/tmp/cppm_run_$$"
+    echo -e "${CYAN}[cppm]${RESET} Compiling: $file"
+    if "$CPC" "$file" -o "$out"; then
+        echo -e "${GREEN}[cppm]${RESET} Running..."
+        echo "──────────────────────────"
+        "$out"
+        local rc=$?
+        echo "──────────────────────────"
+        rm -f "$out"
+        exit $rc
+    else
+        rm -f "$out"
+        echo -e "${RED}[cppm] Compilation failed.${RESET}" >&2
+        exit 1
+    fi
+}
+
+cmd_build() {
+    local CPC
+    CPC="$(find_cpc)"
+    # Read project name from cprime.json if present
+    local name="app"
+    [ -f "cprime.json" ] && \
+        name=$(python3 -c "import json,sys; d=json.load(open('cprime.json')); print(d.get('name','app'))" 2>/dev/null || echo "app")
+    local entry="src/main.cp"
+    [ -f "$entry" ] || { echo -e "${RED}[cppm] error: src/main.cp not found${RESET}" >&2; exit 1; }
+    mkdir -p build
+    echo -e "${CYAN}[cppm]${RESET} Building: $entry → build/$name"
+    if "$CPC" "$entry" -o "build/$name"; then
+        echo -e "${GREEN}[cppm]${RESET} Built: build/$name"
+    else
+        echo -e "${RED}[cppm] Build failed.${RESET}" >&2; exit 1
+    fi
+}
+
+cmd_check() {
+    local file="${1:-src/main.cp}"
+    local CPC
+    CPC="$(find_cpc)"
+    echo -e "${CYAN}[cppm]${RESET} Checking: $file"
+    "$CPC" "$file" --check
+}
+
+# ── Dispatch ──────────────────────────────────────────────────────────────────
+case "${1:-}" in
+    init)             cmd_init "${2:-}" ;;
+    run)              cmd_run  "${2:-}" ;;
+    build)            cmd_build ;;
+    check)            cmd_check "${2:-}" ;;
+    version|--version|-v)
+        echo "cppm $VERSION"
+        echo "C-Prime Package Manager"
+        echo "https://github.com/cprime-lang/cprime"
+        ;;
+    --help|-h|help)   usage ;;
+    "")               usage; exit 1 ;;
+    *)
+        echo -e "${RED}[cppm] unknown command: $1${RESET}" >&2
+        echo "Run 'cppm --help' for usage." >&2
+        exit 1
+        ;;
+esac

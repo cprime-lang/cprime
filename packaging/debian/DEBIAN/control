@@ -1,0 +1,23 @@
+Package: cprime
+Version: 0.1.0-alpha
+Section: devel
+Priority: optional
+Architecture: amd64
+Depends: libc6 (>= 2.17), libssl3, libcurl4, libjson-c5, libreadline8
+Recommends: build-essential, nasm, code
+Suggests: valgrind, gdb
+Installed-Size: 1428
+Maintainer: C-Prime Project <cprime@proton.me>
+Description: C-Prime programming language compiler and tools
+ C-Prime (C`) is a statically typed, memory-safe systems programming
+ language that combines C's simplicity with Rust-style borrow checking.
+ The ` (backtick) operator is the borrow operator.
+ .
+ This package includes:
+  * cpc  -- C-Prime Compiler (compiles .cp files to native Linux binaries)
+  * cpg  -- C-Prime Guard (memory safety and vulnerability analyzer)
+  * cppm -- C-Prime Package Manager (install packages, check for updates)
+ .
+ cppm appears in your application menu under Development.
+ Install the VS Code extension (.vslnx) for syntax highlighting and tutorials.
+Homepage: https://github.com/cprime-lang/cprime
